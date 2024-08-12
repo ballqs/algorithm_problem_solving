@@ -1,0 +1,29 @@
+SELECT CRCC.CAR_ID , CRCC.CAR_TYPE , 
+        ROUND((CRCC.DAILY_FEE - CRCC.DAILY_FEE / 100 *
+        (
+            SELECT DISCOUNT_RATE
+            FROM CAR_RENTAL_COMPANY_DISCOUNT_PLAN
+            WHERE DURATION_TYPE = "30일 이상"
+                AND CAR_TYPE = CRCC.CAR_TYPE
+        )) * 30,0) AS FEE
+FROM CAR_RENTAL_COMPANY_CAR CRCC
+WHERE CRCC.CAR_TYPE IN("세단" , "SUV")
+    AND ROUND((CRCC.DAILY_FEE - CRCC.DAILY_FEE / 100 *
+        (
+            SELECT DISCOUNT_RATE
+            FROM CAR_RENTAL_COMPANY_DISCOUNT_PLAN
+            WHERE DURATION_TYPE = "30일 이상"
+                AND CAR_TYPE = CRCC.CAR_TYPE
+        )) * 30,0) BETWEEN 500000 AND 2000000
+    AND (
+            SELECT COUNT(*)
+            FROM CAR_RENTAL_COMPANY_CAR C
+                LEFT JOIN CAR_RENTAL_COMPANY_RENTAL_HISTORY H ON(H.CAR_ID = C.CAR_ID)
+            WHERE C.CAR_ID = CRCC.CAR_ID
+                AND (
+                        (H.START_DATE LIKE '2022-11-%' OR H.END_DATE LIKE '2022-11-%')
+                        OR
+                        (H.START_DATE <= '2022-11-01' AND H.END_DATE >= '2022-11-30')
+                    )
+        ) = 0
+ORDER BY FEE DESC , CAR_TYPE ASC , CRCC.CAR_ID DESC;
